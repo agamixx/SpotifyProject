@@ -19,6 +19,15 @@ import java.util.Scanner;
 
 public class Main {
     public static void main(String[] args){
+        try{
+            flow();
+        }catch (Exception e)
+        {
+            e.printStackTrace();
+        }
+    }
+
+    public static void flow() throws Exception {
         //Setup-----------------------------------------------------------------------------------------------------------------
         ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext("applicationContext.xml");
         PlaylistService ps = context.getBean("playlistService", PlaylistService.class);
@@ -27,6 +36,7 @@ public class Main {
         Scanner scanner = new Scanner(System.in);
         String userChoice;
         //----------------------------------------------------------------------------------------------------------------------
+
 
         PrintingHelper.printWelcome();
         do {
@@ -45,8 +55,11 @@ public class Main {
                         {
                             u = null;
                             System.out.println(unfe.getMessage());
-                        } catch (Exception e) {
-                            System.out.println("Something went wrong");
+                        }
+                        catch (NullPointerException e)
+                        {
+                            u = null;
+                            System.out.println("no such account");
                         }
                     }while(u == null);
                     break;
@@ -62,10 +75,6 @@ public class Main {
                         {
                             u = null;
                             System.out.println(unte.getMessage());
-                        }
-                        catch (Exception e)
-                        {
-                            System.out.println("Something went wrong");
                         }
                     }while(u == null);
                     break;
@@ -90,14 +99,9 @@ public class Main {
                     }
                     break;
                 case "2":
-                    try{
-                        for (Playlist p : ps.getAllPlaylistsByUser(u)) {
-                            System.out.println(p);
-                        }
-                    }catch (Exception e){
-                        System.out.println("Something went wrong");
+                    for (Playlist p : ps.getAllPlaylistsByUser(u)) {
+                        System.out.println(p);
                     }
-
                     try{
                         ps.deletePlaylist(PrintingHelper.scanInt("Enter playlist id to remove: "), u);
                     } catch (NumberFormatException e)
@@ -106,10 +110,7 @@ public class Main {
                     } catch (PlaylistNotFoundInUserException e) {
                         System.out.println(e.getMessage());
                     }
-                    catch (Exception e)
-                    {
-                        System.out.println("Something went wrong");
-                    }
+
 
                     break;
                 case "3":
@@ -154,20 +155,12 @@ public class Main {
                     {
                         System.out.println("Expected number!");
                     }
-                    catch (Exception e)
-                    {
-                        System.out.println("Something went wrong");
-                    }
                     break;
                 case "5":
-                    try {
-                        for (Playlist p : ps.getAllPlaylistsByUser(u)) {
-                            System.out.println(p);
-                        }
-                    }catch (Exception e)
-                    {
-                        System.out.println("Something went wrong");
+                    for (Playlist p : ps.getAllPlaylistsByUser(u)) {
+                        System.out.println(p);
                     }
+
                     break;
                 case "6":
                     System.out.println("GOODBYE!");

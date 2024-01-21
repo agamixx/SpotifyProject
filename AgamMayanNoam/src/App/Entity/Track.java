@@ -6,12 +6,12 @@ import org.springframework.stereotype.Component;
 import java.io.Serializable;
 import java.util.Objects;
 public class Track implements Comparable<Track>, Serializable {
-    String trackId;
-    String trackName;
-    String trackArtist;
-    String trackAlbum;
-    String trackAlbumUrl;
-    String trackArtistUrl;
+    private String trackId;
+    private String trackName;
+    private String trackArtist;
+    private String trackAlbum;
+    private String trackAlbumUrl;
+    private String trackArtistUrl;
     public Track(String tId, String tName, String tArtist, String tAlbum, String tAlbumUrl, String artistUrl)
     {
         trackId = tId;

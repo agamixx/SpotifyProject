@@ -31,7 +31,7 @@ public class Playlist implements Serializable{
     {
         for(int i = 0; i < tracks.size();i++)
         {
-            if(tracks.get(i).trackId.equals(trackId))
+            if(tracks.get(i).getTrackId().equals(trackId))
             {
                 tracks.remove(i);
                 return true;
@@ -44,6 +44,15 @@ public class Playlist implements Serializable{
     {
         for (Track track : tracks) {
             if(track.equals(t))
+                return true;
+        }
+        return false;
+    }
+
+    public boolean isInPlaylist(String trackId)
+    {
+        for (Track track : tracks) {
+            if(track.getTrackId().equals(trackId))
                 return true;
         }
         return false;

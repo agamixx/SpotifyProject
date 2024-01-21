@@ -16,6 +16,8 @@ public class UserService {
     private dao db;
 
     public User register(User u) throws Exception {
+        if(db.usernameExists(u.getUserName()))
+            throw new UserNameTakenException(u.getUserName());
         return db.registerUser(u);
     }
 
@@ -24,7 +26,9 @@ public class UserService {
     }
 
     public User login(User u) throws Exception {
-        return db.loginUser(u);
+        if(db.successLogin(u.getUserName(), u.getPassword()))
+            return u;
+        throw new UserNotFoundException(u.getUserName());
     }
 
 

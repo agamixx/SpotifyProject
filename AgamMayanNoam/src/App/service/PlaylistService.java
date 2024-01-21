@@ -16,6 +16,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
 
 @Component("playlistService")
@@ -33,6 +34,8 @@ public class PlaylistService {
     }
 
     public void deletePlaylist(int playlistId,User u) throws Exception {
+        if(getPlaylistById(playlistId,u) == null)
+            throw new PlaylistNotFoundInUserException(playlistId,u.getUserName());
         db.removePlaylist(playlistId, u);
     }
 
@@ -69,15 +72,28 @@ public class PlaylistService {
         return searchResults;
     }
     public void addSongToPlaylist(int playlistId, Track song, User u) throws Exception {
+        if(db.getPlaylistById(playlistId,u) == null)
+            throw new PlaylistNotFoundInUserException(playlistId,u.getUserName());
+        List<Playlist> l = db.getAllPlaylistByUser(u);
+        if(getPlaylistById(playlistId, u).isInPlaylist(song))
+            throw new TrackAlreadyInPlaylistException(playlistId, song.getTrackName());
         db.addTrackToPlaylist(playlistId, song, u);
     }
 
     public void removeSongFromPlaylist(int playlistId, String trackId, User u) throws Exception {
-        db.removeTrackFromPlaylist(playlistId, trackId, u);
+        if(db.getPlaylistById(playlistId,u) == null)
+            throw new PlaylistNotFoundInUserException(playlistId, u.getUserName());
+        if(db.getPlaylistById(playlistId,u).isInPlaylist(trackId)) {
+            db.removeTrackFromPlaylist(playlistId, trackId, u);
+            return;
+        }
+        throw new TrackNotFoundInPlaylistException(playlistId, trackId);
     }
 
-    public Playlist getPlaylistById(int id, User u) throws Exception {
-        return db.getPlaylistById(id, u);
+    private Playlist getPlaylistById(int id, User u) throws Exception {
+        if(db.getPlaylistById(id, u) != null)
+            return db.getPlaylistById(id, u);
+        throw new PlaylistNotFoundInUserException(id, u.getUserName());
     }
     public ArrayList<Playlist> getAllPlaylistsByUser(User u) throws Exception {
         return db.getAllPlaylistByUser(u);

@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 import javax.annotation.PostConstruct;
 import java.io.*;
 import java.util.ArrayList;
+import java.util.List;
 
 @Component("myDao")
 @PropertySource("setup.properties")
@@ -43,6 +44,17 @@ public class FileDao implements dao{
         return null;
     }
 
+    private <T> void writeToFile(T obj, File f)
+    {
+        try (FileOutputStream fos = new FileOutputStream(f);
+             ObjectOutputStream oos = new ObjectOutputStream(fos)) {
+            oos.writeObject(obj);
+        } catch (Exception e) {
+            e.printStackTrace();
+            // Handle exception
+        }
+    }
+
     @PostConstruct
     public void startFileDao() throws Exception
     {
@@ -61,6 +73,8 @@ public class FileDao implements dao{
     public void writePlaylist(Playlist p) throws Exception {
         File pdatFile = new File(pdat);
         ArrayList<Playlist> playlists = getArrayListPlaylist(pdat);
+        if(playlists == null)
+            playlists = new ArrayList<>();
 
         // Assign ID and add the new playlist
         p.setId(finalPlaylistId + 1);
@@ -68,13 +82,7 @@ public class FileDao implements dao{
         playlists.add(p);
 
         // Write the updated list of playlists
-        try (FileOutputStream fos = new FileOutputStream(pdatFile);
-             ObjectOutputStream oos = new ObjectOutputStream(fos)) {
-            oos.writeObject(playlists);
-        } catch (Exception e) {
-            e.printStackTrace();
-            // Handle exception
-        }
+        writeToFile(playlists, pdatFile);
     }
 
 
@@ -82,82 +90,61 @@ public class FileDao implements dao{
     public void removePlaylist(int id, User u) throws Exception {
         File pdatFile = new File(pdat);
         ArrayList<Playlist> playlists = getArrayListPlaylist(pdat);
+        if(playlists == null)
+            throw new PlaylistNotFoundInUserException(id, u.getUserName());
 
         // Remove the playlist with the given ID
         if(!playlists.removeIf(p -> p.getId() == id && p.getUserName().equals(u.getUserName())))
             throw new PlaylistNotFoundInUserException(id, u.getUserName());
 
         // Write the updated list of playlists back to the file
-        try (FileOutputStream fos = new FileOutputStream(pdatFile);
-             ObjectOutputStream oos = new ObjectOutputStream(fos)) {
-            oos.writeObject(playlists);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        writeToFile(playlists, pdatFile);
     }
 
     public Playlist getPlaylistById(int id, User u) throws Exception {
         ArrayList<Playlist> playlists = getArrayListPlaylist(pdat);
+        if(playlists == null)
+            return null;
 
         for (Playlist p : playlists) {
-            if(p.getId() == id)
+            if (p.getId() == id && u.getUserName().equals(p.getUserName()))
                 return p;
         }
-        throw new PlaylistNotFoundInUserException(id, u.getUserName());
+        return null;
     }
     @Override
     public void addTrackToPlaylist(int id, Track t, User u) throws Exception {
         File pdatFile = new File(pdat);
         ArrayList<Playlist> playlists = getArrayListPlaylist(pdat);
+        if(playlists == null)
+            throw new PlaylistNotFoundInUserException(id,u.getUserName());
 
-        boolean addedSuccsessfuly = false;
         // find index of spesific playlist id
-        for(int i = 0; i < playlists.size();i++)
-        {
-            if(playlists.get(i).getId() == id && playlists.get(i).getUserName().equals(u.getUserName()))
-            {
-                if(playlists.get(i).isInPlaylist(t))
-                    throw new TrackAlreadyInPlaylistException(id, t.getTrackName());
-                playlists.get(i).addToPlaylist(t);
-                addedSuccsessfuly = true;
+        for (Playlist playlist : playlists) {
+            if (playlist.getId() == id && playlist.getUserName().equals(u.getUserName())) {
+                playlist.addToPlaylist(t);
             }
         }
-        if(!addedSuccsessfuly)
-            throw new PlaylistNotFoundInUserException(id, u.getUserName());
-
         // Write the updated list of playlists back to the file
-        try (FileOutputStream fos = new FileOutputStream(pdatFile);
-             ObjectOutputStream oos = new ObjectOutputStream(fos)) {
-            oos.writeObject(playlists);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        writeToFile(playlists, pdatFile);
     }
 
     @Override
     public void removeTrackFromPlaylist(int id, String trackId, User u) throws Exception {
         File pdatFile = new File(pdat);
         ArrayList<Playlist> playlists = getArrayListPlaylist(pdat);
+        if(playlists == null)
+            throw new PlaylistNotFoundInUserException(id, u.getUserName());
 
-        boolean removed = false;
-        // find index of spesific playlist id
-        for(int i = 0; i < playlists.size();i++)
-        {
-            if(playlists.get(i).getId() == id && playlists.get(i).getUserName().equals(u.getUserName()))
-            {
-                removed = playlists.get(i).removeFromPlaylist(trackId);
+
+        for (Playlist playlist : playlists) {
+            if (playlist.getId() == id && playlist.getUserName().equals(u.getUserName())) {
+                playlist.removeFromPlaylist(trackId);
             }
         }
-        if (!removed)
-            throw new TrackNotFoundInPlaylistException(id, trackId);
 
         // Write the updated list of playlists back to the file
-        try (FileOutputStream fos = new FileOutputStream(pdatFile);
-             ObjectOutputStream oos = new ObjectOutputStream(fos)) {
-            oos.writeObject(playlists);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        writeToFile(playlists, pdatFile);
     }
 
     @Override
@@ -165,6 +152,8 @@ public class FileDao implements dao{
         String userName = u.getUserName();
         ArrayList<Playlist> ret = new ArrayList<>();
         ArrayList<Playlist> playlists = getArrayListPlaylist(pdat);
+        if(playlists == null)
+            return ret;
 
         // make ret value
         for (Playlist playlist : playlists) {
@@ -175,32 +164,42 @@ public class FileDao implements dao{
         return ret;
     }
 
+    public boolean usernameExists(String username) throws Exception {
+        List<User> l = getAllUsers();
+        if(l == null)
+            return false;
+        for (User u : l) {
+            if(u.getUserName().equals(username))
+                return true;
+        }
+        return false;
+    }
+
     @Override
     public User registerUser(User u) throws Exception {
         File pdatFile = new File(udat);
-        ArrayList<User> users = getArrayListUser(udat);
-
-        // find if user exists
-        for (User user : users)
-            if (user.equals(u))
-                throw new UserNameTakenException(u.getUserName());
+        ArrayList<User> users = getAllUsers();
+        if(users == null)
+            users = new ArrayList<>();
         users.add(u);
 
         // Write the updated list of users back to the file
-        try (FileOutputStream fos = new FileOutputStream(pdatFile);
-             ObjectOutputStream oos = new ObjectOutputStream(fos)) {
-            oos.writeObject(users);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        }
+        writeToFile(users, pdatFile);
         return u;
+    }
+
+    public boolean successLogin(String username, String password) throws Exception {
+        ArrayList<User> users = getAllUsers();
+        for(User u : users)
+            if(u.getUserName().equals(username) && u.getPassword().equals(password))
+                return true;
+        return false;
     }
 
     @Override
     public User loginUser(User u) throws Exception {
         File pdatFile = new File(udat);
-        ArrayList<User> users = getArrayListUser(udat);
+        ArrayList<User> users = getAllUsers();
 
         // find if user exists
         for (User user : users)
@@ -211,6 +210,12 @@ public class FileDao implements dao{
     }
 
     public ArrayList<User> getAllUsers() throws Exception {
-        return getArrayListUser(udat);
+        try{
+            return getArrayListUser(udat);
+        }catch (IOException e)
+        {
+            return null;
+        }
+
     }
 }

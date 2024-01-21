@@ -9,15 +9,17 @@ import java.util.ArrayList;
 
 public interface dao {
 //playlist
-public void writePlaylist(Playlist p) throws Exception;
-public void removePlaylist(int id, User u) throws Exception;
-public void addTrackToPlaylist(int id, Track t, User u) throws Exception;
-public Playlist getPlaylistById(int id, User u) throws Exception;
-public void removeTrackFromPlaylist(int id, String trackId, User u) throws Exception;
+ void writePlaylist(Playlist p) throws Exception;
+ void removePlaylist(int id, User u) throws Exception;
+ void addTrackToPlaylist(int id, Track t, User u) throws Exception;
+ Playlist getPlaylistById(int id, User u) throws Exception;
+ void removeTrackFromPlaylist(int id, String trackId, User u) throws Exception;
 
 //user
 ArrayList<Playlist> getAllPlaylistByUser(User u) throws Exception;
+public boolean usernameExists(String username) throws Exception;
 public User registerUser(User u) throws Exception;
 public User loginUser(User u) throws Exception;
+public boolean successLogin(String username, String password) throws Exception;
 public ArrayList<User> getAllUsers() throws Exception;
 }
